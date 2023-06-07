@@ -1,0 +1,61 @@
+import numpy as np
+import pyaudio
+import time
+
+dot_duration = 0.1
+dash_duration = 0.3
+
+dot_frequency = 1000  # Frequency in Hz for dot
+dash_frequency = 1000  # Frequency in Hz for dash
+
+morse_code_mapping = {
+    'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+    'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+    'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+    'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+    'Y': '-.--', 'Z': '--..',
+    '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....',
+    '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+    '.': '.-.-.-', ',': '--..--', '?': '..--..', "'": '.----.', '!': '-.-.--', '/': '-..-.', '(': '-.--.', ')': '-.--.-',
+    '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-', '+': '.-.-.', '-': '-....-', '_': '..--.-', '"': '.-..-.',
+    '$': '...-..-', '@': '.--.-.', ' ': '/'
+}
+
+def generate_tone(duration, frequency):
+    sample_rate = 44100  # Sample rate in Hz
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    tone = np.sin(frequency * 2 * np.pi * t)
+    return tone
+
+def play_tone(tone):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paFloat32,
+                    channels=1,
+                    rate=44100,
+                    output=True)
+    stream.write(tone.astype(np.float32).tobytes())
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+
+def play_morse_code(message):
+    for char in message:
+        char = char.upper()
+        if char in morse_code_mapping:
+            code = morse_code_mapping[char]
+            for symbol in code:
+                if symbol == '.':
+                    tone = generate_tone(dot_duration, dot_frequency)
+                elif symbol == '-':
+                    tone = generate_tone(dash_duration, dash_frequency)
+                else:
+                    continue
+                play_tone(tone)
+                time.sleep(dot_duration)  # Pause between dots and dashes
+        else:
+            time.sleep(dot_duration)  # Pause for spaces between words
+
+# Example usage
+message = input("Please enter the message you'd like to send: ")
+
+play_morse_code(message)
